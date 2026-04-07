@@ -1,14 +1,34 @@
 # Modo: batch — Procesamiento Masivo de Ofertas
 
-Dos modos de uso: **conductor --chrome** (navega portales en tiempo real) o **standalone** (script para URLs ya recolectadas).
+Dos modos de uso: **conductor with browser** (navega portales en tiempo real) o **standalone** (script para URLs ya recolectadas).
 
 ## Arquitectura
+
+### Copilot CLI — Subagent Model
+
+```
+Copilot CLI Conductor (main session with browser)
+  │
+  │  Chrome DevTools: navega portales (sesiones logueadas)
+  │  Lee DOM directo — el usuario ve todo en tiempo real
+  │
+  ├─ Oferta 1: lee JD del DOM + URL
+  │    └─► task(agent_type="general-purpose", mode="background") → report .md + PDF + tracker-line
+  │
+  ├─ Oferta 2: click siguiente, lee JD + URL
+  │    └─► task(agent_type="general-purpose", mode="background") → report .md + PDF + tracker-line
+  │
+  └─ Fin: merge tracker-additions → applications.md + resumen
+```
+
+Each subagent runs in a separate context. The conductor only orchestrates.
+
+### Claude Code — Pipe Worker Model
 
 ```
 Claude Conductor (claude --chrome --dangerously-skip-permissions)
   │
   │  Chrome: navega portales (sesiones logueadas)
-  │  Lee DOM directo — el usuario ve todo en tiempo real
   │
   ├─ Oferta 1: lee JD del DOM + URL
   │    └─► claude -p worker → report .md + PDF + tracker-line
@@ -19,42 +39,54 @@ Claude Conductor (claude --chrome --dangerously-skip-permissions)
   └─ Fin: merge tracker-additions → applications.md + resumen
 ```
 
-Cada worker es un `claude -p` hijo con contexto limpio de 200K tokens. El conductor solo orquesta.
-
 ## Archivos
 
 ```
 batch/
   batch-input.tsv               # URLs (por conductor o manual)
   batch-state.tsv               # Progreso (auto-generado, gitignored)
-  batch-runner.sh               # Script orquestador standalone
+  batch-runner.sh               # Script orquestador standalone (Claude Code only)
   batch-prompt.md               # Prompt template para workers
   logs/                         # Un log por oferta (gitignored)
   tracker-additions/            # Líneas de tracker (gitignored)
 ```
 
-## Modo A: Conductor --chrome
+## Modo A: Conductor with browser
 
 1. **Leer estado**: `batch/batch-state.tsv` → saber qué ya se procesó
-2. **Navegar portal**: Chrome → URL de búsqueda
+2. **Navegar portal**: Browser → URL de búsqueda
 3. **Extraer URLs**: Leer DOM de resultados → extraer lista de URLs → append a `batch-input.tsv`
 4. **Para cada URL pendiente**:
-   a. Chrome: click en la oferta → leer JD text del DOM
+   a. Browser: click en la oferta → leer JD text del DOM
    b. Guardar JD a `/tmp/batch-jd-{id}.txt`
    c. Calcular siguiente REPORT_NUM secuencial
-   d. Ejecutar via Bash:
-      ```bash
-      claude -p --dangerously-skip-permissions \
-        --append-system-prompt-file batch/batch-prompt.md \
-        "Procesa esta oferta. URL: {url}. JD: /tmp/batch-jd-{id}.txt. Report: {num}. ID: {id}"
-      ```
+   d. **Launch subagent:**
+
+   **Copilot CLI:**
+   ```
+   task(
+     agent_type="general-purpose",
+     mode="background",
+     name="batch-worker-{id}",
+     description="Evaluate offer {id}",
+     prompt="[content of batch/batch-prompt.md]\n\nProcesa esta oferta. URL: {url}. JD: [JD text]. Report: {num}. ID: {id}"
+   )
+   ```
+
+   **Claude Code:**
+   ```bash
+   claude -p --dangerously-skip-permissions \
+     --append-system-prompt-file batch/batch-prompt.md \
+     "Procesa esta oferta. URL: {url}. JD: /tmp/batch-jd-{id}.txt. Report: {num}. ID: {id}"
+   ```
+
    e. Actualizar `batch-state.tsv` (completed/failed + score + report_num)
    f. Log a `logs/{report_num}-{id}.log`
-   g. Chrome: volver atrás → siguiente oferta
+   g. Browser: volver atrás → siguiente oferta
 5. **Paginación**: Si no hay más ofertas → click "Next" → repetir
 6. **Fin**: Merge `tracker-additions/` → `applications.md` + resumen
 
-## Modo B: Script standalone
+## Modo B: Script standalone (Claude Code only)
 
 ```bash
 batch/batch-runner.sh [OPTIONS]
@@ -66,6 +98,8 @@ Opciones:
 - `--start-from N` — empieza desde ID N
 - `--parallel N` — N workers en paralelo
 - `--max-retries N` — intentos por oferta (default: 2)
+
+**Note:** `batch-runner.sh` uses `claude -p` which is Claude Code-specific. In Copilot CLI, use Modo A (conductor with browser) or launch `task()` subagents manually for each pending URL.
 
 ## Formato batch-state.tsv
 
@@ -82,9 +116,12 @@ id	url	status	started_at	completed_at	report_num	score	error	retries
 - Lock file (`batch-runner.pid`) previene ejecución doble
 - Cada worker es independiente: fallo en oferta #47 no afecta a las demás
 
-## Workers (claude -p)
+## Workers (subagents)
 
-Cada worker recibe `batch-prompt.md` como system prompt. Es self-contained.
+Each worker receives `batch-prompt.md` as system prompt. It is self-contained.
+
+**Copilot CLI:** Each worker is a `task(agent_type="general-purpose")` subagent.
+**Claude Code:** Each worker is a `claude -p` child process with clean 200K context.
 
 El worker produce:
 1. Report `.md` en `reports/`

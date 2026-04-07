@@ -6,11 +6,22 @@ Escanea portales de empleo configurados, filtra por relevancia de título, y añ
 
 Ejecutar como subagente para no consumir contexto del main:
 
+**Claude Code:**
 ```
 Agent(
     subagent_type="general-purpose",
     prompt="[contenido de este archivo + datos específicos]",
     run_in_background=True
+)
+```
+
+**Copilot CLI:**
+```
+task(
+    agent_type="general-purpose",
+    mode="background",
+    name="career-ops-scan",
+    prompt="[contenido de este archivo + datos específicos]"
 )
 ```
 
@@ -23,28 +34,32 @@ Leer `portals.yml` que contiene:
 
 ## Estrategia de descubrimiento (3 niveles)
 
-### Nivel 1 — Playwright directo (PRINCIPAL)
+### Nivel 1 — Browser directo (PRINCIPAL)
 
-**Para cada empresa en `tracked_companies`:** Navegar a su `careers_url` con Playwright (`browser_navigate` + `browser_snapshot`), leer TODOS los job listings visibles, y extraer título + URL de cada uno. Este es el método más fiable porque:
+**Para cada empresa en `tracked_companies`:** Navegar a su `careers_url` con el browser (navegar + snapshot), leer TODOS los job listings visibles, y extraer título + URL de cada uno. Este es el método más fiable porque:
 - Ve la página en tiempo real (no resultados cacheados de Google)
 - Funciona con SPAs (Ashby, Lever, Workday)
 - Detecta ofertas nuevas al instante
 - No depende de la indexación de Google
 
+**Tools:**
+- Claude Code: `browser_navigate` + `browser_snapshot`
+- Copilot CLI: `chrome-devtools-navigate_page` + `chrome-devtools-take_snapshot`
+
 **Cada empresa DEBE tener `careers_url` en portals.yml.** Si no la tiene, buscarla una vez, guardarla, y usar en futuros scans.
 
 ### Nivel 2 — Greenhouse API (COMPLEMENTARIO)
 
-Para empresas con Greenhouse, la API JSON (`boards-api.greenhouse.io/v1/boards/{slug}/jobs`) devuelve datos estructurados limpios. Usar como complemento rápido de Nivel 1 — es más rápido que Playwright pero solo funciona con Greenhouse.
+Para empresas con Greenhouse, la API JSON (`boards-api.greenhouse.io/v1/boards/{slug}/jobs`) devuelve datos estructurados limpios. Usar como complemento rápido de Nivel 1 — es más rápido que browser navigation pero solo funciona con Greenhouse.
 
-### Nivel 3 — WebSearch queries (DESCUBRIMIENTO AMPLIO)
+### Nivel 3 — Web Search queries (DESCUBRIMIENTO AMPLIO)
 
 Los `search_queries` con `site:` filters cubren portales de forma transversal (todos los Ashby, todos los Greenhouse, etc.). Útil para descubrir empresas NUEVAS que aún no están en `tracked_companies`, pero los resultados pueden estar desfasados.
 
 **Prioridad de ejecución:**
-1. Nivel 1: Playwright → todas las `tracked_companies` con `careers_url`
+1. Nivel 1: Browser → todas las `tracked_companies` con `careers_url`
 2. Nivel 2: API → todas las `tracked_companies` con `api:`
-3. Nivel 3: WebSearch → todos los `search_queries` con `enabled: true`
+3. Nivel 3: Web Search → todos los `search_queries` con `enabled: true`
 
 Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y deduplicar.
 
@@ -54,10 +69,10 @@ Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y dedu
 2. **Leer historial**: `data/scan-history.tsv` → URLs ya vistas
 3. **Leer dedup sources**: `data/applications.md` + `data/pipeline.md`
 
-4. **Nivel 1 — Playwright scan** (paralelo en batches de 3-5):
+4. **Nivel 1 — Browser scan** (paralelo en batches de 3-5):
    Para cada empresa en `tracked_companies` con `enabled: true` y `careers_url` definida:
-   a. `browser_navigate` a la `careers_url`
-   b. `browser_snapshot` para leer todos los job listings
+   a. Navigate to the `careers_url`
+   b. Take snapshot to read all the job listings
    c. Si la página tiene filtros/departamentos, navegar las secciones relevantes
    d. Para cada job listing extraer: `{title, url, company}`
    e. Si la página pagina resultados, navegar páginas adicionales
@@ -66,13 +81,13 @@ Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y dedu
 
 5. **Nivel 2 — Greenhouse APIs** (paralelo):
    Para cada empresa en `tracked_companies` con `api:` definida y `enabled: true`:
-   a. WebFetch de la URL de API → JSON con lista de jobs
+   a. Web Fetch de la URL de API → JSON con lista de jobs
    b. Para cada job extraer: `{title, url, company}`
    c. Acumular en lista de candidatos (dedup con Nivel 1)
 
-6. **Nivel 3 — WebSearch queries** (paralelo si posible):
+6. **Nivel 3 — Web Search queries** (paralelo si posible):
    Para cada query en `search_queries` con `enabled: true`:
-   a. Ejecutar WebSearch con el `query` definido
+   a. Ejecutar web search con el `query` definido
    b. De cada resultado extraer: `{title, url, company}`
       - **title**: del título del resultado (antes del " @ " o " | ")
       - **url**: URL del resultado
@@ -91,11 +106,11 @@ Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y dedu
 
 7.5. **Verificar liveness de resultados de WebSearch (Nivel 3)** — ANTES de añadir a pipeline:
 
-   Los resultados de WebSearch pueden estar desactualizados (Google cachea resultados durante semanas o meses). Para evitar evaluar ofertas expiradas, verificar con Playwright cada URL nueva que provenga del Nivel 3. Los Niveles 1 y 2 son inherentemente en tiempo real y no requieren esta verificación.
+   Los resultados de WebSearch pueden estar desactualizados (Google cachea resultados durante semanas o meses). Para evitar evaluar ofertas expiradas, verificar con browser navigation cada URL nueva que provenga del Nivel 3. Los Niveles 1 y 2 son inherentemente en tiempo real y no requieren esta verificación.
 
-   Para cada URL nueva de Nivel 3 (secuencial — NUNCA Playwright en paralelo):
-   a. `browser_navigate` a la URL
-   b. `browser_snapshot` para leer el contenido
+   Para cada URL nueva de Nivel 3 (secuencial — NUNCA browser navigation en paralelo):
+   a. Navigate to the URL
+   b. Take snapshot to read the content
    c. Clasificar:
       - **Activa**: título del puesto visible + descripción del rol + botón Apply/Submit/Solicitar
       - **Expirada** (cualquiera de estas señales):
@@ -105,7 +120,7 @@ Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y dedu
    d. Si expirada: registrar en `scan-history.tsv` con status `skipped_expired` y descartar
    e. Si activa: continuar al paso 8
 
-   **No interrumpir el scan entero si una URL falla.** Si `browser_navigate` da error (timeout, 403, etc.), marcar como `skipped_expired` y continuar con la siguiente.
+   **No interrumpir el scan entero si una URL falla.** Si browser navigation da error (timeout, 403, etc.), marcar como `skipped_expired` y continuar con la siguiente.
 
 8. **Para cada oferta nueva verificada que pase filtros**:
    a. Añadir a `pipeline.md` sección "Pendientes": `- [ ] {url} | {company} | {title}`
@@ -115,9 +130,9 @@ Los niveles son aditivos — se ejecutan todos, los resultados se mezclan y dedu
 10. **Ofertas duplicadas**: registrar con status `skipped_dup`
 11. **Ofertas expiradas (Nivel 3)**: registrar con status `skipped_expired`
 
-## Extracción de título y empresa de WebSearch results
+## Extracción de título y empresa de web search results
 
-Los resultados de WebSearch vienen en formato: `"Job Title @ Company"` o `"Job Title | Company"` o `"Job Title — Company"`.
+Los resultados de web search vienen en formato: `"Job Title @ Company"` o `"Job Title | Company"` o `"Job Title — Company"`.
 
 Patrones de extracción por portal:
 - **Ashby**: `"Senior AI PM (Remote) @ EverAI"` → title: `Senior AI PM`, company: `EverAI`
@@ -174,8 +189,8 @@ Cada empresa en `tracked_companies` debe tener `careers_url` — la URL directa 
 
 **Si `careers_url` no existe** para una empresa:
 1. Intentar el patrón de su plataforma conocida
-2. Si falla, hacer un WebSearch rápido: `"{company}" careers jobs`
-3. Navegar con Playwright para confirmar que funciona
+2. Si falla, hacer un web search rápido: `"{company}" careers jobs`
+3. Navegar con browser to confirm it works
 4. **Guardar la URL encontrada en portals.yml** para futuros scans
 
 **Si `careers_url` devuelve 404 o redirect:**

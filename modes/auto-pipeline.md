@@ -8,9 +8,11 @@ Si el input es una **URL** (no texto de JD pegado), seguir esta estrategia para 
 
 **Orden de prioridad:**
 
-1. **Playwright (preferido):** La mayoría de portales de empleo (Lever, Ashby, Greenhouse, Workday) son SPAs. Usar `browser_navigate` + `browser_snapshot` para renderizar y leer el JD.
-2. **WebFetch (fallback):** Para páginas estáticas (ZipRecruiter, WeLoveProduct, company career pages).
-3. **WebSearch (último recurso):** Buscar título del rol + empresa en portales secundarios que indexan el JD en HTML estático.
+1. **Browser navigation (preferido):** La mayoría de portales de empleo (Lever, Ashby, Greenhouse, Workday) son SPAs. Navegar a la URL y tomar snapshot para renderizar y leer el JD.
+   - Claude Code: `browser_navigate` + `browser_snapshot`
+   - Copilot CLI: `chrome-devtools-navigate_page` + `chrome-devtools-take_snapshot`
+2. **Web Fetch (fallback):** Para páginas estáticas (ZipRecruiter, WeLoveProduct, company career pages).
+3. **Web Search (último recurso):** Buscar título del rol + empresa en portales secundarios que indexan el JD en HTML estático.
 
 **Si ningún método funciona:** Pedir al candidato que pegue el JD manualmente o comparta un screenshot.
 
@@ -29,7 +31,7 @@ Ejecutar el pipeline completo de `pdf` (leer `modes/pdf.md`).
 
 Si el score final es >= 4.5, generar borrador de respuestas para el formulario de aplicación:
 
-1. **Extraer preguntas del formulario**: Usar Playwright para navegar al formulario y hacer snapshot. Si no se pueden extraer, usar las preguntas genéricas.
+1. **Extraer preguntas del formulario**: Usar browser navigation para navegar al formulario y hacer snapshot. Si no se pueden extraer, usar las preguntas genéricas.
 2. **Generar respuestas** siguiendo el tono (ver abajo).
 3. **Guardar en el report** como sección `## G) Draft Application Answers`.
 

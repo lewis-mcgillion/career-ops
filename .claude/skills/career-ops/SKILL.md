@@ -7,6 +7,8 @@ args: mode
 
 # career-ops -- Router
 
+> This skill file is used by Claude Code (via `/career-ops` slash command). Copilot CLI uses `.github/copilot-instructions.md` for routing. Both platforms share the same `modes/` files.
+
 ## Mode Routing
 
 Determine the mode from `{{mode}}`:
@@ -77,7 +79,7 @@ Read `modes/{mode}.md`
 Applies to: `tracker`, `deep`, `training`, `project`
 
 ### Modes delegated to subagent:
-For `scan`, `apply` (with Playwright), and `pipeline` (3+ URLs): launch as Agent with the content of `_shared.md` + `modes/{mode}.md` injected into the subagent prompt.
+For `scan`, `apply` (with browser), and `pipeline` (3+ URLs): launch as subagent with the content of `_shared.md` + `modes/{mode}.md` injected into the subagent prompt.
 
 ```
 Agent(

@@ -2,9 +2,10 @@
 
 **[:gb: English](#what-is-this)** | **[:es: Español](#es-versión-en-español)**
 
-> AI-powered job search pipeline built on Claude Code. Evaluate offers, generate tailored CVs, scan portals, and track everything -- powered by AI agents.
+> AI-powered job search pipeline built on AI coding agents. Evaluate offers, generate tailored CVs, scan portals, and track everything -- powered by AI agents.
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-000?style=flat&logo=anthropic&logoColor=white)
+![Copilot CLI](https://img.shields.io/badge/Copilot_CLI-000?style=flat&logo=github&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)
 ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat&logo=playwright&logoColor=white)
@@ -18,7 +19,7 @@
 
 ## What Is This
 
-Career-Ops turns Claude Code into a full job search command center. Instead of manually tracking applications in a spreadsheet, you get an AI-powered pipeline that:
+Career-Ops turns your AI coding agent into a full job search command center. It works with **Claude Code**, **GitHub Copilot CLI**, and **OpenCode**. Instead of manually tracking applications in a spreadsheet, you get an AI-powered pipeline that:
 
 - **Evaluates offers** with a structured A-F scoring system (10 weighted dimensions)
 - **Generates tailored PDFs** -- ATS-optimized CVs customized per job description
@@ -28,7 +29,7 @@ Career-Ops turns Claude Code into a full job search command center. Instead of m
 
 > **Important: This is NOT a spray-and-pray tool.** Career-ops is a filter -- it helps you find the few offers worth your time out of hundreds. The system strongly recommends against applying to anything scoring below 4.0/5. Your time is valuable, and so is the recruiter's. Always review before submitting.
 
-Career-ops is agentic: Claude Code navigates career pages with Playwright, evaluates fit by reasoning about your CV vs the job description (not keyword matching), and adapts your resume per listing.
+Career-ops is agentic: your AI agent navigates career pages with browser automation, evaluates fit by reasoning about your CV vs the job description (not keyword matching), and adapts your resume per listing.
 
 > **Heads up: the first evaluations won't be great.** The system doesn't know you yet. Feed it context -- your CV, your career story, your proof points, your preferences, what you're good at, what you want to avoid. The more you nurture it, the better it gets. Think of it as onboarding a new recruiter: the first week they need to learn about you, then they become invaluable.
 
@@ -44,7 +45,7 @@ Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored
 | **Negotiation Scripts** | Salary negotiation frameworks, geographic discount pushback, competing offer leverage |
 | **ATS PDF Generation** | Keyword-injected CVs with Space Grotesk + DM Sans design |
 | **Portal Scanner** | 45+ companies pre-configured (Anthropic, OpenAI, ElevenLabs, Retool, n8n...) + custom queries across Ashby, Greenhouse, Lever, Wellfound |
-| **Batch Processing** | Parallel evaluation with `claude -p` workers |
+| **Batch Processing** | Parallel evaluation with subagent workers |
 | **Dashboard TUI** | Terminal UI to browse, filter, and sort your pipeline |
 | **Human-in-the-Loop** | AI evaluates and recommends, you decide and act. The system never submits an application -- you always have the final call |
 | **Pipeline Integrity** | Automated merge, dedup, status normalization, health checks |
@@ -53,7 +54,7 @@ Built by someone who used it to evaluate 740+ job offers, generate 100+ tailored
 
 ```bash
 # 1. Clone and install
-git clone https://github.com/santifer/career-ops.git
+git clone https://github.com/lewis-mcgillion/career-ops.git
 cd career-ops && npm install
 npx playwright install chromium   # Required for PDF generation
 
@@ -67,27 +68,35 @@ cp templates/portals.example.yml portals.yml       # Customize companies
 # 4. Add your CV
 # Create cv.md in the project root with your CV in markdown
 
-# 5. Personalize with Claude
-claude   # Open Claude Code in this directory
+# 5. Launch your AI agent
+# Option A: Claude Code
+claude
 
-# Then ask Claude to adapt the system to you:
+# Option B: GitHub Copilot CLI
+copilot
+
+# Option C: OpenCode
+opencode
+
+# Then ask your agent to adapt the system to you:
 # "Change the archetypes to backend engineering roles"
 # "Translate the modes to English"
 # "Add these 5 companies to portals.yml"
 # "Update my profile with this CV I'm pasting"
 
 # 6. Start using
-# Paste a job URL or run /career-ops
+# Paste a job URL or ask "what can you do"
 ```
 
-> **The system is designed to be customized by Claude itself.** Modes, archetypes, scoring weights, negotiation scripts -- just ask Claude to change them. It reads the same files it uses, so it knows exactly what to edit.
+> **The system is designed to be customized by your AI agent.** Modes, archetypes, scoring weights, negotiation scripts -- just ask your agent to change them. It reads the same files it uses, so it knows exactly what to edit.
 
 See [docs/SETUP.md](docs/SETUP.md) for the full setup guide.
 
 ## Usage
 
-Career-ops is a single slash command with multiple modes:
+Career-ops works through natural language with any supported AI agent:
 
+### Claude Code (slash commands)
 ```
 /career-ops                → Show all available commands
 /career-ops {paste a JD}   → Full auto-pipeline (evaluate + PDF + tracker)
@@ -101,6 +110,22 @@ Career-ops is a single slash command with multiple modes:
 /career-ops deep           → Deep company research
 /career-ops training       → Evaluate a course/cert
 /career-ops project        → Evaluate a portfolio project
+```
+
+### GitHub Copilot CLI (natural language)
+```
+"what can you do"          → Show all available commands
+{paste a JD or URL}        → Full auto-pipeline (evaluate + PDF + tracker)
+"scan portals"             → Scan portals for new offers
+"generate PDF"             → Generate ATS-optimized CV
+"batch evaluate"           → Batch evaluate multiple offers
+"show tracker"             → View application status
+"help me apply"            → Fill application forms with AI
+"process pipeline"         → Process pending URLs
+"LinkedIn outreach"        → LinkedIn outreach message
+"research [company]"       → Deep company research
+"evaluate this course"     → Evaluate a course/cert
+"evaluate project idea"    → Evaluate a portfolio project
 ```
 
 Or just paste a job URL or description directly -- career-ops auto-detects it and runs the full pipeline.
@@ -158,12 +183,19 @@ Features: 6 filter tabs, 4 sort modes, grouped/flat view, lazy-loaded previews, 
 
 ```
 career-ops/
-├── CLAUDE.md                    # Agent instructions
+├── CLAUDE.md                    # Agent instructions (read by all platforms)
 ├── cv.md                        # Your CV (create this)
 ├── article-digest.md            # Your proof points (optional)
+├── .github/
+│   ├── copilot-instructions.md  # Copilot CLI entry point + tool mapping
+│   └── instructions/            # Copilot CLI per-mode instructions
+├── .claude/
+│   └── skills/career-ops/       # Claude Code skill routing
+├── .opencode/
+│   └── commands/                # OpenCode slash commands
 ├── config/
 │   └── profile.example.yml      # Template for your profile
-├── modes/                       # 14 skill modes
+├── modes/                       # 14 skill modes (shared by all platforms)
 │   ├── _shared.md               # Shared context (customize this)
 │   ├── oferta.md                # Single evaluation
 │   ├── pdf.md                   # PDF generation
@@ -176,7 +208,7 @@ career-ops/
 │   └── states.yml               # Canonical statuses
 ├── batch/
 │   ├── batch-prompt.md          # Self-contained worker prompt
-│   └── batch-runner.sh          # Orchestrator script
+│   └── batch-runner.sh          # Orchestrator script (Claude Code)
 ├── dashboard/                   # Go TUI pipeline viewer
 ├── data/                        # Your tracking data (gitignored)
 ├── reports/                     # Evaluation reports (gitignored)
@@ -189,14 +221,15 @@ career-ops/
 ## Tech Stack
 
 ![Claude Code](https://img.shields.io/badge/Claude_Code-000?style=flat&logo=anthropic&logoColor=white)
+![Copilot CLI](https://img.shields.io/badge/Copilot_CLI-000?style=flat&logo=github&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=flat&logo=node.js&logoColor=white)
 ![Playwright](https://img.shields.io/badge/Playwright-2EAD33?style=flat&logo=playwright&logoColor=white)
 ![Go](https://img.shields.io/badge/Go-00ADD8?style=flat&logo=go&logoColor=white)
 ![Bubble Tea](https://img.shields.io/badge/Bubble_Tea-FF75B5?style=flat&logo=go&logoColor=white)
 
-- **Agent**: Claude Code with custom skills and modes
+- **Agent**: Claude Code, GitHub Copilot CLI, or OpenCode with custom skills and modes
 - **PDF**: Playwright/Puppeteer + HTML template
-- **Scanner**: Playwright + Greenhouse API + WebSearch
+- **Scanner**: Browser automation (Playwright or Chrome DevTools) + Greenhouse API + Web Search
 - **Dashboard**: Go + Bubble Tea + Lipgloss (Catppuccin Mocha theme)
 - **Data**: Markdown tables + YAML config + TSV batch files
 
@@ -233,7 +266,7 @@ MIT
 
 ## Que es esto
 
-Career-Ops convierte Claude Code en un centro de mando de busqueda de empleo. En vez de trackear aplicaciones en un spreadsheet, tienes un pipeline AI que:
+Career-Ops convierte tu agente de IA en un centro de mando de busqueda de empleo. Funciona con **Claude Code**, **GitHub Copilot CLI**, y **OpenCode**. En vez de trackear aplicaciones en un spreadsheet, tienes un pipeline AI que:
 
 - **Evalua ofertas** con scoring estructurado A-F (10 dimensiones ponderadas)
 - **Genera PDFs personalizados** -- CVs ATS-optimizados por oferta
@@ -251,7 +284,7 @@ Construido por alguien que lo uso para evaluar 740+ ofertas, generar 100+ CVs pe
 
 ```bash
 # 1. Clonar
-git clone https://github.com/santifer/career-ops.git
+git clone https://github.com/lewis-mcgillion/career-ops.git
 cd career-ops && npm install
 
 # 2. Verificar setup
@@ -264,20 +297,22 @@ cp templates/portals.example.yml portals.yml       # Personalizar empresas
 # 4. Añadir tu CV
 # Crear cv.md en la raiz del proyecto con tu CV en markdown
 
-# 5. Personalizar con Claude
-claude   # Abrir Claude Code en este directorio
+# 5. Personalizar con tu agente de IA
+claude     # Option A: Claude Code
+copilot    # Option B: GitHub Copilot CLI
+opencode   # Option C: OpenCode
 
-# Pidele a Claude que adapte el sistema a ti:
+# Pidele a tu agente que adapte el sistema a ti:
 # "Cambia los arquetipos a roles de backend"
 # "Traduce los modes a ingles"
 # "Añade estas empresas a portals.yml"
 # "Actualiza mi perfil con este CV que te pego"
 
 # 6. Usar
-# Pega una URL de oferta o ejecuta /career-ops
+# Pega una URL de oferta o pregunta "que puedes hacer"
 ```
 
-> **El sistema esta diseñado para que Claude lo personalice.** Modes, arquetipos, scoring, scripts de negociacion -- solo pidelo. Claude lee los mismos archivos que usa, asi que sabe exactamente que editar.
+> **El sistema esta diseñado para que tu agente de IA lo personalice.** Modes, arquetipos, scoring, scripts de negociacion -- solo pidelo. Tu agente lee los mismos archivos que usa, asi que sabe exactamente que editar.
 
 Guia completa en [docs/SETUP.md](docs/SETUP.md).
 
@@ -298,8 +333,9 @@ El scanner viene con **45+ empresas** pre-configuradas y **19 queries** en los p
 
 ## Uso
 
-Career-ops es un unico slash command con multiples modos:
+Career-ops funciona con lenguaje natural o slash commands segun la plataforma:
 
+### Claude Code
 ```
 /career-ops                → Mostrar todos los comandos
 /career-ops {pega un JD}   → Pipeline completo (evaluar + PDF + tracker)
@@ -311,6 +347,20 @@ Career-ops es un unico slash command con multiples modos:
 /career-ops pipeline       → Procesar URLs pendientes
 /career-ops contacto       → Mensaje LinkedIn outreach
 /career-ops deep           → Research profundo de empresa
+```
+
+### GitHub Copilot CLI
+```
+"que puedes hacer"         → Mostrar todos los comandos
+{pega un JD o URL}         → Pipeline completo (evaluar + PDF + tracker)
+"escanear portales"        → Escanear portales
+"generar PDF"              → Generar CV ATS-optimizado
+"evaluar en batch"         → Evaluar ofertas en batch
+"mostrar tracker"          → Ver estado de aplicaciones
+"ayudame a aplicar"        → Rellenar formularios con IA
+"procesar pipeline"        → Procesar URLs pendientes
+"outreach LinkedIn"        → Mensaje LinkedIn outreach
+"investigar [empresa]"     → Research profundo de empresa
 ```
 
 O simplemente pega una URL o descripcion de oferta -- career-ops la detecta y ejecuta el pipeline completo.

@@ -77,7 +77,7 @@ After detecting archetype, read `modes/_profile.md` for the user's specific fram
 1b. **First evaluation of each session:** Run `node cv-sync-check.mjs`. If warnings, notify user.
 2. Detect the role archetype and adapt framing per _profile.md
 3. Cite exact lines from CV when matching
-4. Use WebSearch for comp and company data
+4. Use web search for comp and company data
 5. Register in tracker after evaluating
 6. Generate content in the language of the JD (EN default)
 7. Be direct and actionable -- no fluff
@@ -88,16 +88,17 @@ After detecting archetype, read `modes/_profile.md` for the user's specific fram
 
 ### Tools
 
-| Tool | Use |
-|------|-----|
-| WebSearch | Comp research, trends, company culture, LinkedIn contacts, fallback for JDs |
-| WebFetch | Fallback for extracting JDs from static pages |
-| Playwright | Verify offers (browser_navigate + browser_snapshot). **NEVER 2+ agents with Playwright in parallel.** |
-| Read | cv.md, _profile.md, article-digest.md, cv-template.html |
-| Write | Temporary HTML for PDF, applications.md, reports .md |
-| Edit | Update tracker |
-| Canva MCP | Optional visual CV generation. Duplicate base design, edit text, export PDF. Requires `canva_resume_design_id` in profile.yml. |
-| Bash | `node generate-pdf.mjs` |
+| Tool | Use | Claude Code | Copilot CLI |
+|------|-----|-------------|-------------|
+| Web Search | Comp research, trends, company culture, LinkedIn contacts, fallback for JDs | `WebSearch` | `web_search` |
+| Web Fetch | Fallback for extracting JDs from static pages | `WebFetch` | `web_fetch` |
+| Browser | Verify offers, navigate career pages. **NEVER 2+ agents with browser in parallel.** | Playwright (`browser_navigate` + `browser_snapshot`) | Chrome DevTools (`chrome-devtools-navigate_page` + `chrome-devtools-take_snapshot`) |
+| Read file | cv.md, _profile.md, article-digest.md, cv-template.html | `Read` | `view` |
+| Write file | Temporary HTML for PDF, applications.md, reports .md | `Write` | `create` / `edit` |
+| Edit file | Update tracker | `Edit` | `edit` |
+| Canva MCP | Optional visual CV generation. Requires `canva_resume_design_id` in profile.yml. | Canva MCP | Canva MCP (if configured) |
+| Bash | `node generate-pdf.mjs` | `Bash` | `bash` |
+| Subagent | Parallel evaluation, scanning | `Agent()` | `task(agent_type="general-purpose")` |
 
 ### Time-to-offer priority
 - Working demo + metrics > perfection

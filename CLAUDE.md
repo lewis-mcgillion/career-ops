@@ -1,5 +1,17 @@
 # Career-Ops -- AI Job Search Pipeline
 
+## Multi-Platform Support
+
+This system works with **Claude Code**, **GitHub Copilot CLI**, and **OpenCode**. Each platform reads this file (`CLAUDE.md`) as its primary instruction source.
+
+| Platform | Instruction files | Mode invocation |
+|----------|-------------------|-----------------|
+| **Claude Code** | `CLAUDE.md` + `.claude/skills/career-ops/SKILL.md` | `/career-ops {mode}` slash commands |
+| **Copilot CLI** | `CLAUDE.md` + `.github/copilot-instructions.md` + `.github/instructions/*.instructions.md` | Natural language (e.g., "evaluate this JD", "scan portals") |
+| **OpenCode** | `CLAUDE.md` + `.opencode/commands/*.md` | `/career-ops-{mode}` slash commands |
+
+**If you are Copilot CLI:** See `.github/copilot-instructions.md` for tool mapping (Chrome DevTools instead of Playwright, `task()` instead of `Agent()`, `web_search` instead of `WebSearch`). All mode files in `modes/` use generic tool names — map them per the table in that file.
+
 ## Origin
 
 This system was built and used by [santifer](https://santifer.io) to evaluate 740+ job offers, generate 100+ tailored CVs, and land a Head of Applied AI role. The archetypes, scoring logic, negotiation scripts, and proof point structure all reflect his specific career search in AI/automation roles.
@@ -59,9 +71,46 @@ AI-powered job search automation built on Claude Code: pipeline tracking, offer 
 | `interview-prep/story-bank.md` | Accumulated STAR+R stories across evaluations |
 | `reports/` | Evaluation reports (format: `{###}-{company-slug}-{YYYY-MM-DD}.md`) |
 
-### OpenCode Commands
+### Commands by Platform
 
-When using [OpenCode](https://opencode.ai), the following slash commands are available (defined in `.opencode/commands/`):
+**Claude Code** — Slash commands via `.claude/skills/`:
+
+| Command | Description |
+|---------|-------------|
+| `/career-ops` | Show menu or evaluate JD with args |
+| `/career-ops pipeline` | Process pending URLs from inbox |
+| `/career-ops oferta` | Evaluate job offer (A-F scoring) |
+| `/career-ops ofertas` | Compare and rank multiple offers |
+| `/career-ops contacto` | LinkedIn outreach (find contacts + draft) |
+| `/career-ops deep` | Deep company research |
+| `/career-ops pdf` | Generate ATS-optimized CV |
+| `/career-ops training` | Evaluate course/cert against goals |
+| `/career-ops project` | Evaluate portfolio project idea |
+| `/career-ops tracker` | Application status overview |
+| `/career-ops apply` | Live application assistant |
+| `/career-ops scan` | Scan portals for new offers |
+| `/career-ops batch` | Batch processing with parallel workers |
+
+**GitHub Copilot CLI** — Natural language (no slash commands):
+
+| Say this... | Mode triggered |
+|-------------|----------------|
+| Paste a JD or URL | auto-pipeline |
+| "evaluate this offer" | oferta |
+| "compare these offers" | ofertas |
+| "LinkedIn outreach" | contacto |
+| "research this company" | deep |
+| "generate PDF" / "create CV" | pdf |
+| "evaluate this course" | training |
+| "evaluate project idea" | project |
+| "show tracker" | tracker |
+| "help me apply" | apply |
+| "scan portals" | scan |
+| "process pipeline" | pipeline |
+| "batch evaluate" | batch |
+| "career-ops" / "what can you do" | discovery menu |
+
+**OpenCode** — Slash commands via `.opencode/commands/`:
 
 | Command | Claude Code Equivalent | Description |
 |---------|------------------------|-------------|
@@ -79,7 +128,7 @@ When using [OpenCode](https://opencode.ai), the following slash commands are ava
 | `/career-ops-scan` | `/career-ops scan` | Scan portals for new offers |
 | `/career-ops-batch` | `/career-ops batch` | Batch processing with parallel workers |
 
-**Note:** OpenCode commands invoke the same `.claude/skills/career-ops/SKILL.md` skill used by Claude Code. The `modes/*` files are shared between both platforms.
+**Note:** All platforms invoke the same `modes/*` files. The modes use generic tool names — each platform maps them to its native equivalents.
 
 ### First Run — Onboarding (IMPORTANT)
 
@@ -153,8 +202,8 @@ Store any insights the user shares in `config/profile.yml` (under narrative) or 
 Once all files exist, confirm:
 > "You're all set! You can now:
 > - Paste a job URL to evaluate it
-> - Run `/career-ops scan` (or `/career-ops-scan` if using OpenCode) to search portals
-> - Run `/career-ops` to see all commands
+> - Ask me to 'scan portals' to search for new offers
+> - Ask 'what can you do' to see all commands
 >
 > Everything is customizable — just ask me to change anything.
 >
@@ -163,7 +212,7 @@ Once all files exist, confirm:
 Then suggest automation:
 > "Want me to scan for new offers automatically? I can set up a recurring scan every few days so you don't miss anything. Just say 'scan every 3 days' and I'll configure it."
 
-If the user accepts, use the `/loop` or `/schedule` skill (if available) to set up a recurring `/career-ops scan` (or `/career-ops-scan` if using OpenCode). If those aren't available, suggest adding a cron job or remind them to run `/career-ops scan` (or `/career-ops-scan` if using OpenCode) periodically.
+If the user accepts, set up a recurring scan. Suggest adding a cron job or remind them to ask for a scan periodically.
 
 ### Personalization
 
@@ -235,18 +284,26 @@ Default modes are in `modes/` (English). Additional language-specific modes are 
 
 ## Offer Verification -- MANDATORY
 
-**NEVER trust WebSearch/WebFetch to verify if an offer is still active.** ALWAYS use Playwright:
+**NEVER trust web search to verify if an offer is still active.** ALWAYS use browser navigation:
+
+**Claude Code / OpenCode (Playwright):**
 1. `browser_navigate` to the URL
 2. `browser_snapshot` to read content
-3. Only footer/navbar without JD = closed. Title + description + Apply = active.
 
-**Exception for batch workers (`claude -p`):** Playwright is not available in headless pipe mode. Use WebFetch as fallback and mark the report header with `**Verification:** unconfirmed (batch mode)`. The user can verify manually later.
+**Copilot CLI (Chrome DevTools):**
+1. `chrome-devtools-navigate_page` to the URL
+2. `chrome-devtools-take_snapshot` to read content
+
+**Verification logic (all platforms):**
+- Only footer/navbar without JD = closed. Title + description + Apply = active.
+
+**Exception for batch workers:** Browser tools may not be available in headless/subagent mode. Use web fetch as fallback and mark the report header with `**Verification:** unconfirmed (batch mode)`. The user can verify manually later.
 
 ---
 
 ## Stack and Conventions
 
-- Node.js (mjs modules), Playwright (PDF + scraping), YAML (config), HTML/CSS (template), Markdown (data), Canva MCP (optional visual CV)
+- Node.js (mjs modules), Browser automation (Playwright or Chrome DevTools), YAML (config), HTML/CSS (template), Markdown (data), Canva MCP (optional visual CV)
 - Scripts in `.mjs`, configuration in YAML
 - Output in `output/` (gitignored), Reports in `reports/`
 - JDs in `jds/` (referenced as `local:jds/{file}` in pipeline.md)
