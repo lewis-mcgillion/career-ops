@@ -18,7 +18,9 @@ When mode files reference Claude Code tools, use the Copilot CLI equivalents:
 | Playwright (`browser_navigate` + `browser_snapshot`) | `chrome-devtools-navigate_page` + `chrome-devtools-take_snapshot` | Career pages, SPAs, offer verification |
 | `Read` / `Write` / `Edit` | `view` / `create` / `edit` | File operations |
 | `Bash` | `bash` | Run Node scripts |
-| `claude -p` (pipe workers) | `task(agent_type="general-purpose", mode="background")` | Parallel evaluation, scanning |
+| `claude -p` (pipe workers) | `task` tool with `agent_type: general-purpose`, `mode: background` | Parallel evaluation, scanning |
+
+> **Note:** The left column lists Claude Code CLI commands; the right column lists Copilot CLI agent tool names (invoked via the agent's tool calls, not as shell commands). `chrome-devtools-*` tools require the `chrome-devtools-mcp` MCP server; `task` is the built-in subagent tool.
 
 **Browser is a shared resource — never run 2+ browser agents in parallel.**
 

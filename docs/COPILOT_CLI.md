@@ -46,6 +46,11 @@ Copilot CLI uses natural language instead of slash commands:
 | Deep company research | `modes/deep.md` |
 | Training / certification review | `modes/training.md` |
 | Project evaluation | `modes/project.md` |
+| LinkedIn outreach | `modes/_shared.md` + `modes/contacto.md` |
+| Interview prep | `modes/_shared.md` + `modes/interview-prep.md` |
+| Batch evaluation | `modes/_shared.md` + `modes/batch.md` |
+| Rejection pattern analysis | `modes/_shared.md` + `modes/patterns.md` |
+| Follow-up tracking | `modes/_shared.md` + `modes/followup.md` |
 
 ## Behavioral Rules
 
